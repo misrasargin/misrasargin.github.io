@@ -16,6 +16,7 @@ Every project folder has the same shape:
 
 | Project | Question | Methods |
 |---|---|---|
+| [Discount or Truck?](projects/bike-rebalancing/) | Is it cheaper to rebalance a bike-share system with rider discounts or with a truck? | Poisson gradient boosting, calibration, Skellam risk, replay simulation |
 | [Eurovision Conspiracy Board](projects/eurovision-blocs/) | Do countries really vote for their friends? | Permutation test, Benjamini-Hochberg, Louvain communities, hold-out validation |
 
 ## Run a project yourself
@@ -27,7 +28,7 @@ python analysis/download.py
 python analysis/analyze.py
 ```
 
-Then open `index.html` in a browser. No server is needed.
+Then open `index.html` in a browser. No server is needed. Each project's own README lists its scripts.
 
 ## Third-party files
 

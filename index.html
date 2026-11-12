@@ -23,6 +23,23 @@
 
   <section id="projects">
     <h2 style="margin-bottom:1.25rem">Projects</h2>
+    <article class="sheet project" style="margin-bottom:1.5rem">
+      <a class="thumb" href="projects/bike-rebalancing/" aria-label="Open Discount or Truck?">
+        <svg id="thumb-bikes" preserveAspectRatio="xMidYMid meet"></svg>
+      </a>
+      <div class="text">
+        <h3><a href="projects/bike-rebalancing/">Discount or Truck?</a></h3>
+        <p>Bike-share stations run empty in one place and fill up in another. Is it cheaper to pay a truck crew to move
+          bikes, or to pay riders a discount to do it?</p>
+        <p class="finding">Replaying <span data-b="meta.rides_replayed"></span> real rides: discounts avoid
+          <span data-b="headline.avoided_discounts" data-f="pct"></span> of failed rides, one truck
+          <span data-b="headline.avoided_truck" data-f="pct"></span>. A discount only wins if it costs less than
+          <span data-b="headline.break_even" data-f="pct"></span> of the truck’s cost per bike.</p>
+        <ul class="tags"><li>Forecasting</li><li>Gradient boosting</li><li>Probability calibration</li><li>Simulation</li><li>Cost analysis</li><li>Python</li></ul>
+        <p style="margin:1.25rem 0 0"><a class="btn" href="projects/bike-rebalancing/">Open the project</a>
+          <a class="btn ghost" href="projects/bike-rebalancing/report.html">Read the report</a></p>
+      </div>
+    </article>
     <article class="sheet project">
       <a class="thumb" href="projects/eurovision-blocs/" aria-label="Open the Eurovision Conspiracy Board">
         <svg id="thumb" preserveAspectRatio="xMidYMid meet"></svg>
@@ -60,7 +77,20 @@
 <script src="assets/fill.js"></script>
 <script src="projects/eurovision-blocs/data/results.js"></script>
 <script src="projects/eurovision-blocs/board.js"></script>
+<script src="projects/bike-rebalancing/data/results.js"></script>
 <script>
+// bike project card: numbers and a small station map at 08:00 on weekdays
+document.querySelectorAll("[data-b]").forEach((el) => { el.dataset.k = el.dataset.b; });
+fillNumbers(window.BIKES);
+document.querySelectorAll("[data-b]").forEach((el) => { delete el.dataset.k; });
+(function () {
+  const S = window.BIKES.stations, W = 460, H = 340;
+  const svg = d3.select("#thumb-bikes").attr("viewBox", `0 0 ${W} ${H}`);
+  const proj = d3.geoMercator().fitExtent([[24, 20], [W - 24, H - 20]], { type: "MultiPoint", coordinates: S.map((s) => [s.lon, s.lat]) });
+  const flow = d3.scaleLinear().domain([-5, 0, 5]).range(["#f2b134", "#8f9abc", "#5fb0ff"]).clamp(true);
+  svg.selectAll("circle").data(S).join("circle").attr("transform", (s) => `translate(${proj([s.lon, s.lat])})`)
+    .attr("r", (s) => 2 + Math.sqrt(s.docks) * 0.95).attr("fill", (s) => flow(s.weekday[8])).attr("stroke", "#fff").attr("stroke-width", 0.8);
+})();
 fillNumbers(window.EUROVISION);
 drawBoard("#thumb", window.EUROVISION, { labels: false });
 </script>
