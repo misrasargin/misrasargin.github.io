@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report: Eurovision Conspiracy Board | Mısra Sargın</title>
+<link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a href="../../">Mısra Sargın</a>
+    <nav><a href="../../#projects">Projects</a><a href="./">Interactive board</a></nav>
+  </header>
+
+  <article class="sheet report" style="margin:2rem 0">
+    <h1 style="font-size:clamp(2rem,5vw,3.2rem)">Do Eurovision countries vote for their friends?</h1>
+    <p class="lede" style="margin-top:1rem">Method report for the <a href="./">Eurovision Conspiracy Board</a>.</p>
+
+    <h2>Summary</h2>
+    <p>Using <span data-k="meta.votes"></span> votes from <span data-k="meta.finals"></span> grand finals
+      (<span data-k="meta.years.0" data-f="raw"></span> to <span data-k="meta.years.1" data-f="raw"></span>), I measured how many more points each country
+      gives another than the rest of Europe gives the same song. Of <span data-k="meta.pairs_tested"></span> country pairs,
+      <span data-k="meta.bh_significant"></span> show favouritism that survives a permutation test and a multiple-testing
+      correction. Favouritism is mutual (r = <span data-k="meta.reciprocity_r" data-f="2dp"></span>), it forms
+      <span id="n-blocs"></span> regional blocs, and on held-out years it comes mostly from the public vote
+      (<span data-k="holdout.friends_tele.0" data-f="signed"></span> points) and much less from juries
+      (<span data-k="holdout.friends_jury.0" data-f="signed"></span> points).</p>
+
+    <h2>Data and cleaning</h2>
+    <p>Source: the Eurovision Song Contest Dataset by Spijkervet and Burgoyne (release 2023), which records the points each
+      country gave every other country. Cleaning steps, all in <code>analysis/analyze.py</code>:</p>
+    <ul class="limits">
+      <li>Grand finals only. Semi-finals have different voters and would mix two contests.</li>
+      <li>From 1975, when the 1 to 8, 10 and 12 points system began. Earlier systems are not comparable.</li>
+      <li>The 2023 “rest of the world” vote is dropped, because it is not a country.</li>
+      <li>Since 2016 each country gives two sets of points (jury and public), so the maximum to one song is 24, not 12.
+        I divide by the yearly maximum so all years share a 0 to 1 scale, then report results back in 12-point units.</li>
+    </ul>
+
+    <h2>Measuring bias</h2>
+    <p>A raw count of points is misleading: everybody gave Sweden points in the years Sweden won. So I compare each vote with
+      what the same song got from everyone else in the same year.</p>
+    <div class="formula">bias(A → B, year) = points A gave B − average points all other countries gave B</div>
+    <p>A pair’s bias is the average over every final where A voted and B performed. Pairs need at least
+      <span data-k="meta.min_years"></span> such finals to be tested, which leaves <span data-k="meta.pairs_tested"></span> pairs.</p>
+
+    <h2>Is it more than chance?</h2>
+    <p>The null hypothesis is that it does not matter who the voter is. Under it, the points a song received could be
+      handed out to the voters in any order. So for each song in each year I shuffle the points between voters, recompute
+      every pair’s bias, and repeat <span data-k="meta.permutations"></span> times. A pair’s p-value is the share of shuffles
+      with a bias at least as large as the real one.</p>
+    <table>
+      <tr><th>Step</th><th>Pairs flagged</th></tr>
+      <tr><td>Pairs tested</td><td class="n" data-k="meta.pairs_tested"></td></tr>
+      <tr><td>p &lt; 0.05 with no correction, real votes</td><td class="n" data-k="meta.naive_significant"></td></tr>
+      <tr><td>p &lt; 0.05 with no correction, shuffled votes (average)</td><td class="n" data-k="meta.expected_by_chance"></td></tr>
+      <tr><td>Largest count seen in any shuffle</td><td class="n" data-k="meta.chance_max"></td></tr>
+      <tr><td>After Benjamini-Hochberg at 5% false discovery rate</td><td class="n" data-k="meta.bh_significant"></td></tr>
+    </table>
+    <p>The middle rows are the reason for the correction. Testing this many pairs produces dozens of “friendships” from pure
+      noise. The real count is far outside anything the shuffles produced, so the effect is real, but only the corrected
+      list is safe to name pair by pair.</p>
+
+    <h2>The strongest ties</h2>
+    <table id="top"><tr><th>From</th><th>To</th><th>Extra points</th><th>Finals</th></tr></table>
+
+    <h2>Blocs</h2>
+    <p>I built a network from the significant pairs, weighting a tie more when it runs in both directions, and ran Louvain
+      community detection. Modularity is <span data-k="meta.modularity"></span>; values above roughly 0.3 are usually read as
+      clear community structure. The blocs it found:</p>
+    <ol id="blocs" class="limits"></ol>
+
+    <h2>Hold-out check: juries against the public</h2>
+    <p>Finding pairs and measuring them on the same data flatters the result. So I repeated the whole test on 1975 to 2015
+      only (<span data-k="holdout.train_pairs_found"></span> pairs found), then measured those pairs on 2016 to 2023, years
+      the test never saw and the only years where jury and public points are published separately.
+      <span data-k="holdout.friend_pairs_seen_again"></span> of the pairs met again in a final.</p>
+    <table>
+      <tr><th>Group</th><th>Vote</th><th>Extra points</th><th>95% interval</th></tr>
+      <tr><td>Friend pairs</td><td>Public</td><td class="n" data-k="holdout.friends_tele.0" data-f="signed"></td><td class="n"><span data-k="holdout.friends_tele.1"></span> to <span data-k="holdout.friends_tele.2"></span></td></tr>
+      <tr><td>Friend pairs</td><td>Jury</td><td class="n" data-k="holdout.friends_jury.0" data-f="signed"></td><td class="n"><span data-k="holdout.friends_jury.1"></span> to <span data-k="holdout.friends_jury.2"></span></td></tr>
+      <tr><td>Friend pairs</td><td>Public minus jury</td><td class="n" data-k="holdout.tele_minus_jury.0" data-f="signed"></td><td class="n"><span data-k="holdout.tele_minus_jury.1"></span> to <span data-k="holdout.tele_minus_jury.2"></span></td></tr>
+      <tr><td>All other pairs (<span data-k="holdout.other_pairs"></span>)</td><td>Public</td><td class="n" data-k="holdout.others_tele.0" data-f="signed"></td><td class="n"><span data-k="holdout.others_tele.1"></span> to <span data-k="holdout.others_tele.2"></span></td></tr>
+      <tr><td>All other pairs</td><td>Jury</td><td class="n" data-k="holdout.others_jury.0" data-f="signed"></td><td class="n"><span data-k="holdout.others_jury.1"></span> to <span data-k="holdout.others_jury.2"></span></td></tr>
+    </table>
+    <p>The friendships persist out of sample, and the public shows clearly more of it than the juries. Intervals are
+      bootstrap intervals over pairs.</p>
+
+    <h2>Limitations</h2>
+    <ul class="limits">
+      <li>The analysis shows that favouritism exists, not what causes it. Language, diaspora, shared taste and politics are not separated.</li>
+      <li>Shuffling each song separately ignores the fact that one voter can give only one 12. The test is approximate in that respect.</li>
+      <li>The <span data-k="meta.min_years"></span>-final minimum leaves out newer participants and short-lived states.</li>
+      <li>The bias is an average over decades. Friendships that started or ended along the way are blurred.</li>
+      <li>Bootstrap intervals treat pairs as independent, but pairs that share a country are related, so the intervals are a little too narrow.</li>
+    </ul>
+
+    <h2>Reproduce it</h2>
+    <p><code>pip install -r requirements.txt</code>, then <code>python analysis/download.py</code> and
+      <code>python analysis/analyze.py</code>. The random seed is fixed, so the numbers on this page come out the same.</p>
+  </article>
+</div>
+<script src="../../assets/fill.js"></script>
+<script src="data/results.js"></script>
+<script>
+const D = window.EUROVISION;
+fillNumbers(D);
+const name = (id) => D.countries.find((c) => c.id === id).name;
+document.getElementById("n-blocs").textContent = D.blocs.length;
+document.getElementById("top").insertAdjacentHTML("beforeend", D.pairs.filter((p) => p.sig).sort((a, b) => b.bias - a.bias).slice(0, 12)
+  .map((p) => `<tr><td>${name(p.from)}</td><td>${name(p.to)}</td><td class="n">+${p.bias.toFixed(1)}</td><td class="n">${p.years}</td></tr>`).join(""));
+document.getElementById("blocs").innerHTML = D.blocs.map((b) => `<li>${b.join(", ")}</li>`).join("");
+</script>
+</body>
+</html>
