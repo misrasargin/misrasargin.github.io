@@ -17,6 +17,10 @@ Every project folder has the same shape:
 | Project | Question | Methods |
 |---|---|---|
 | [Discount or Truck?](projects/bike-rebalancing/) | Is it cheaper to rebalance a bike-share system with rider discounts or with a truck? | Poisson gradient boosting, calibration, Skellam risk, replay simulation |
+| [Markdown or Waste?](projects/grocery-markdown/) | When should a shop discount fresh food, and by how much? | Price elasticity with product-level baselines, bootstrap, expected-revenue optimisation, backtest |
+| [Did the Promotion Work?](projects/ab-test-planner/) | How long must an A/B test run, and how do you read the result? | Power analysis, test of two proportions, sequential-testing simulation |
+| [What Do Data Jobs Ask For?](projects/data-job-skills/) | Which skills go with which data role, and what changed in three years? | Data pipeline, SQLite and SQL, text mining, Wilson intervals, Benjamini-Hochberg |
+| [Half-Life of Fame](projects/half-life-of-fame/) | How fast does attention fade after a spike? | Event detection in time series, half-life and tail measures, bootstrap, Kruskal-Wallis |
 | [Eurovision Conspiracy Board](projects/eurovision-blocs/) | Do countries really vote for their friends? | Permutation test, Benjamini-Hochberg, Louvain communities, hold-out validation |
 
 ## Run a project yourself
