@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eurovision Conspiracy Board | Mısra Sargın</title>
+<meta name="description" content="Do Eurovision countries really vote for their friends? A permutation test on 48 finals, with an interactive voting network.">
+<link rel="stylesheet" href="../../assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a href="../../">Mısra Sargın</a>
+    <nav><a href="../../#projects">Projects</a><a href="report.html">Full report</a></nav>
+  </header>
+
+  <section class="hero" style="padding-bottom:0">
+    <h1 style="max-width:16ch">Eurovision Conspiracy Board</h1>
+    <p class="lede">Every May someone says “they only vote for their neighbours”. I tested it on
+      <span data-k="meta.votes"></span> votes from <span data-k="meta.finals"></span> grand finals
+      (<span data-k="meta.years.0" data-f="raw"></span> to <span data-k="meta.years.1" data-f="raw"></span>). The short answer: yes, it is real,
+      it is smaller than people think, and the public does it far more than the juries.</p>
+    <div class="answer">
+      <div><b data-k="meta.bh_significant"></b>country pairs give each other more points than chance explains, out of <span data-k="meta.pairs_tested"></span> tested.</div>
+      <div><b id="top-bias"></b><span id="top-pair"></span>, the strongest tie. Extra points per final, on the 12-point scale.</div>
+      <div><b data-k="meta.reciprocity_r" data-f="2dp"></b>correlation between what A gives B and what B gives back. Favours are returned.</div>
+      <div><b><span data-k="holdout.friends_tele.0" data-f="signed"></span></b>extra points from the public for a “friend”, against
+        <span data-k="holdout.friends_jury.0" data-f="signed"></span> from juries, on votes the model had never seen.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The board</h2>
+    <p>Each pin is a country. A red string joins two countries when at least one gives the other more points than
+      shuffled votes can explain. Thicker string means more extra points. Pick a country to see its strings.</p>
+    <div class="board">
+      <svg id="board" role="img" aria-label="Network of countries joined by significant voting ties"></svg>
+      <div class="side">
+        <label for="pick"><h3>Pick a country</h3></label>
+        <select id="pick"></select>
+        <p id="pick-note"></p>
+        <h3>Gives extra points to</h3>
+        <ol id="gives"></ol>
+        <h3>Gets extra points from</h3>
+        <ol id="gets"></ol>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <p class="small" style="margin-top:0.75rem">Colours are voting blocs found by an algorithm (Louvain community detection),
+      not drawn by hand. The bloc names are mine.</p>
+  </section>
+
+  <section class="two">
+    <div class="sheet chart">
+      <h3>Could chance draw this board?</h3>
+      <p>I shuffled who gave which points <span data-k="meta.permutations"></span> times. With
+        <span data-k="meta.pairs_tested"></span> pairs tested, shuffled votes still “find” about
+        <span data-k="meta.expected_by_chance"></span> friendships each time. The real votes have
+        <span data-k="meta.naive_significant"></span>.</p>
+      <svg id="chance" role="img" aria-label="Histogram of friendships found in shuffled votes compared with the real count"></svg>
+      <p class="small">This is why the board only shows the <span data-k="meta.bh_significant"></span> pairs that survive a
+        correction for testing many pairs at once (Benjamini-Hochberg, 5% false discovery rate).</p>
+    </div>
+    <div class="sheet chart">
+      <h3>Who plays favourites, juries or the public?</h3>
+      <p>I found friend pairs using only the years before 2016, then checked them on 2016 to 2023, where jury and public
+        points are published separately. <span data-k="holdout.friend_pairs_seen_again"></span> of the
+        <span data-k="holdout.train_pairs_found"></span> pairs met again.</p>
+      <svg id="split" role="img" aria-label="Extra points for friend pairs from the public and from juries"></svg>
+      <p class="small">Dots are averages, lines are 95% bootstrap intervals.
+        <span data-k="holdout.share_still_positive_tele" data-f="pct"></span> of friend pairs still got extra points from the public,
+        <span data-k="holdout.share_still_positive_jury" data-f="pct"></span> from juries.</p>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>How it works, in plain words</h2>
+    <div class="cols" style="margin-top:1.25rem">
+      <div><h3>The question</h3><p>Do some countries give each other more points than the song deserves?</p></div>
+      <div><h3>The data</h3><p>Every grand final vote since the 12-point system began in 1975. Open dataset by Spijkervet and Burgoyne.</p></div>
+      <div><h3>The measure</h3><p>Bias: the points A gave a song, minus the average the rest of Europe gave that song that year. A great song gets points from everyone, so quality cancels out.</p></div>
+      <div><h3>The test</h3><p>Shuffle the voters, recompute, repeat. If real bias beats almost every shuffle, it is not luck. Then correct for testing many pairs.</p></div>
+    </div>
+    <h3 style="margin-top:2rem">What this cannot tell you</h3>
+    <ul class="limits">
+      <li>It shows that pairs favour each other, not why. Shared language, diaspora, shared music taste and politics all look the same in this data.</li>
+      <li>Pairs need at least <span data-k="meta.min_years"></span> shared finals to be tested, so newer countries are under-represented.</li>
+      <li>The shuffle treats each song separately. It ignores that a voter has only one 12 to give, which makes the test slightly approximate.</li>
+      <li>Bias is not the same as deciding the winner. A few extra points from friends rarely change who wins.</li>
+    </ul>
+    <p style="margin-top:1.5rem"><a class="btn" href="report.html">Read the full report</a>
+      <a class="btn ghost" href="https://github.com/misrasargin/misrasargin.github.io/tree/main/projects/eurovision-blocs">See the code</a></p>
+  </section>
+
+  <footer>Data: Spijkervet &amp; Burgoyne, Eurovision Song Contest Dataset (release 2023). Charts drawn with D3.</footer>
+</div>
+
+<script src="../../assets/vendor/d3.min.js"></script>
+<script src="../../assets/fill.js"></script>
+<script src="data/results.js"></script>
+<script src="board.js"></script>
+<script>
+const D = window.EUROVISION;
+fillNumbers(D);
+const name = (id) => D.countries.find((c) => c.id === id).name;
+const sig = D.pairs.filter((p) => p.sig).sort((a, b) => b.bias - a.bias);
+document.getElementById("top-bias").textContent = "+" + sig[0].bias.toFixed(1);
+document.getElementById("top-pair").textContent = `${name(sig[0].from)} to ${name(sig[0].to)}`;
+
+// ---- board + side panel -------------------------------------------------
+const pick = document.getElementById("pick");
+const board = drawBoard("#board", D, { onPick: (id) => { pick.value = id; show(id); } });
+board.model.nodes.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach((n) => pick.add(new Option(n.name, n.id)));
+document.getElementById("legend").innerHTML = [...board.model.style.values()]
+  .map((s) => `<span><i style="background:${s.color}"></i>${s.name}</span>`).join("");
+
+function list(el, rows, key) {
+  el.innerHTML = rows.length
+    ? rows.map((p) => `<li><span>${name(p[key])}</span><span>+${p.bias.toFixed(1)}</span></li>`).join("")
+    : `<li class="none"><span>No tie strong enough</span><span></span></li>`;
+}
+function show(id) {
+  const c = board.model.byId.get(id);
+  board.highlight(id);
+  document.getElementById("pick-note").textContent = `${c.finals} finals as a voter, ${c.first} to ${c.last}.`;
+  list(document.getElementById("gives"), sig.filter((p) => p.from === id), "to");
+  list(document.getElementById("gets"), sig.filter((p) => p.to === id), "from");
+}
+pick.addEventListener("change", () => show(pick.value));
+pick.value = board.model.byId.has("tr") && sig.some((p) => p.from === "tr" || p.to === "tr") ? "tr" : sig[0].from;
+show(pick.value);
+
+// ---- chance histogram ---------------------------------------------------
+(function () {
+  const W = 480, H = 250, m = { t: 26, r: 16, b: 40, l: 16 };
+  const svg = d3.select("#chance").attr("viewBox", `0 0 ${W} ${H}`);
+  const counts = D.chance_hist.map((n, k) => ({ k, n })).filter((d) => d.n > 0);
+  const real = D.meta.naive_significant;
+  const x = d3.scaleLinear().domain([d3.min(counts, (d) => d.k) - 4, real + 12]).range([m.l, W - m.r]);
+  const y = d3.scaleLinear().domain([0, d3.max(counts, (d) => d.n)]).range([H - m.b, m.t]);
+  svg.append("g").selectAll("rect").data(counts).join("rect")
+    .attr("x", (d) => x(d.k - 0.5)).attr("width", Math.max(1, x(1) - x(0) - 0.5))
+    .attr("y", (d) => y(d.n)).attr("height", (d) => y(0) - y(d.n)).attr("fill", "#4d5875");
+  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(7).tickSizeOuter(0));
+  svg.append("text").attr("class", "note").attr("x", W / 2).attr("y", H - 4).attr("text-anchor", "middle").text("friendships found (p < 0.05, no correction)");
+  svg.append("text").attr("x", x(D.meta.expected_by_chance)).attr("y", m.t - 10).attr("text-anchor", "middle").text("shuffled votes");
+  svg.append("line").attr("x1", x(real)).attr("x2", x(real)).attr("y1", m.t).attr("y2", H - m.b).attr("stroke", "#d7263d").attr("stroke-width", 3);
+  svg.append("text").attr("x", x(real) - 8).attr("y", m.t + 12).attr("text-anchor", "end").attr("fill", "#d7263d").style("font-weight", 700).text(`real votes: ${real}`);
+})();
+
+// ---- jury vs public -----------------------------------------------------
+(function () {
+  const h = D.holdout;
+  const rows = [
+    { label: "Friends, public vote", v: h.friends_tele, c: "#d7263d" },
+    { label: "Friends, jury vote", v: h.friends_jury, c: "#12857a" },
+    { label: "Everyone else, public", v: h.others_tele, c: "#4d5875" },
+    { label: "Everyone else, jury", v: h.others_jury, c: "#4d5875" },
+  ];
+  const W = 480, H = 250, m = { t: 14, r: 44, b: 40, l: 158 };
+  const svg = d3.select("#split").attr("viewBox", `0 0 ${W} ${H}`);
+  const x = d3.scaleLinear().domain([-1, Math.ceil(d3.max(rows, (r) => r.v[2]))]).range([m.l, W - m.r]);
+  const y = d3.scaleBand().domain(rows.map((r) => r.label)).range([m.t, H - m.b]).padding(0.4);
+  svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(6).tickSizeOuter(0));
+  svg.append("line").attr("x1", x(0)).attr("x2", x(0)).attr("y1", m.t).attr("y2", H - m.b).attr("stroke", "#16213e").attr("stroke-dasharray", "3 3");
+  svg.append("text").attr("class", "note").attr("x", (m.l + W - m.r) / 2).attr("y", H - 4).attr("text-anchor", "middle").text("extra points per final (12-point scale)");
+  const g = svg.append("g").selectAll("g").data(rows).join("g").attr("transform", (r) => `translate(0,${y(r.label) + y.bandwidth() / 2})`);
+  g.append("text").attr("x", m.l - 12).attr("dy", "0.35em").attr("text-anchor", "end").text((r) => r.label);
+  g.append("line").attr("x1", (r) => x(r.v[1])).attr("x2", (r) => x(r.v[2])).attr("stroke", (r) => r.c).attr("stroke-width", 3);
+  g.append("circle").attr("cx", (r) => x(r.v[0])).attr("r", 7).attr("fill", (r) => r.c).attr("stroke", "#fff").attr("stroke-width", 2);
+  g.append("text").attr("x", (r) => x(r.v[2]) + 8).attr("dy", "0.35em").style("font-weight", 700).text((r) => signed(r.v[0]));
+})();
+</script>
+</body>
+</html>

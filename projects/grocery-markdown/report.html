@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report: Markdown or Waste? | Mısra Sargın</title>
+<link rel="stylesheet" href="../../assets/style.css">
+<style>.report table { width: 100%; max-width: 760px; } .scroll { overflow-x: auto; }</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a href="../../">Mısra Sargın</a>
+    <nav><a href="../../#projects">Projects</a><a href="./">Interactive page</a></nav>
+  </header>
+  <article class="sheet report" style="margin:2rem 0">
+    <h1 style="font-size:clamp(2rem,5vw,3.2rem)">Markdown or waste? Pricing fresh food before it expires</h1>
+    <p class="lede" style="margin-top:1rem">Method report for the <a href="./">interactive page</a>.</p>
+
+    <h2>Summary</h2>
+    <p>From <span data-k="meta.product_days"></span> product-days of an online grocer I estimate how much a discount
+      raises sales of fresh products: about ×<span id="l1"></span> at 10 to 20% off and ×<span id="l2"></span> at 30 to 40%
+      off, or a price elasticity of <span data-k="elasticity.value" data-f="2dp"></span>. With that, an evening
+      markdown rule chooses the price that earns the most from stock that expires tonight. Replayed on
+      <span data-k="meta.replay_days"></span> held-out days with morning stock 30% above a normal day’s sales, the rule
+      cuts waste from <span id="w0"></span> to <span id="w2"></span> of the stock and raises revenue by <span id="r2"></span>;
+      a flat 30% discount manages <span id="w1"></span> and <span id="r1"></span>.</p>
+
+    <h2>Data</h2>
+    <p>FreshRetailNet-50K, published by Dingdong Fresh under CC BY 4.0: <span data-k="meta.series"></span> store-product
+      pairs (<span data-k="meta.stores"></span> stores, <span data-k="meta.products"></span> fresh products) over
+      <span data-k="meta.days"></span> days, <span data-k="meta.first_date" data-f="raw"></span> to
+      <span data-k="meta.last_date" data-f="raw"></span>. Each row has the day’s sales by hour, the day’s discount, a
+      promotion flag, and which hours the product was out of stock. Sales are multiplied by a constant the publisher
+      does not disclose, and stores, products and categories are codes. Everything here is therefore a ratio.</p>
+    <ul class="limits">
+      <li><span data-k="meta.discounted_share" data-f="pct"></span> of product-days carry a discount of more than 2%.</li>
+      <li><span data-k="meta.in_stock_share" data-f="pct"></span> of product-days have no stock-out between 06:00 and 22:00.
+        Only these are used, because on the others sales are capped by the shelf and understate demand.</li>
+      <li>The first <span data-k="meta.train_days"></span> days estimate everything. The last 30 test it.</li>
+    </ul>
+
+    <h2>Part 1: what a discount buys</h2>
+    <p>Each product is its own control. Its baseline is its average full-price sales on in-stock days in the first 60
+      days (at least 8 such days; <span data-k="meta.series_with_baseline"></span> pairs qualify), adjusted by the weekday
+      pattern of its category. The lift in a discount band is total sales on discounted days divided by total baseline
+      for the same days. Intervals come from resampling products <span data-k="meta.bootstrap"></span> times.</p>
+    <div class="scroll"><table id="lift-table">
+      <tr><th>Discount</th><th class="n">Product-days</th><th class="n">Lift</th><th class="n">95% interval</th><th class="n">Lift, last 30 days</th><th class="n">Without promotion</th><th class="n">With promotion</th></tr>
+    </table></div>
+    <p>The held-out column uses the last 30 days with baselines from the first 60. It follows the same curve: a little
+      higher than the estimate in the shallow bands and lower in the deepest one. The last two columns split the first 60 days by the promotion
+      flag. At shallow discounts the promotion adds a little. Deep discounts without a promotion are rare and show much
+      larger lifts; they look like a different kind of event, such as a clearance, and I do not rely on them.</p>
+    <p>One number summarises the curve: the elasticity e for which baseline × price<sup>−e</sup> reproduces total
+      discounted sales. It is <span data-k="elasticity.value" data-f="2dp"></span>
+      (95% interval <span data-k="elasticity.lo" data-f="2dp"></span> to <span data-k="elasticity.hi" data-f="2dp"></span>).
+      It differs a lot between the largest product categories:</p>
+    <div class="scroll"><table id="cat-table"><tr><th>Category code</th><th class="n">Store-product pairs</th><th class="n">Elasticity</th><th class="n">95% interval</th></tr></table></div>
+    <p>Does it predict? On <span data-k="meta.discounted_test_days"></span> discounted product-days in the last 30 days:</p>
+    <div class="scroll"><table id="val-table"><tr><th>Forecast</th><th class="n">Total predicted against total sold</th><th class="n">Weighted absolute error</th></tr></table></div>
+    <p>Ignoring the discount under-predicts sales by about a third. The lift removes that bias. The absolute error stays
+      high because a single product on a single day is noisy whatever the price.</p>
+
+    <h2>Part 2: the evening rule</h2>
+    <p>At 19:00, <span id="left19"></span> of a normal day’s sales are still to come. Suppose the shelf holds s times that
+      amount and the stock is worthless tomorrow. At price p (as a share of full price) demand is multiplied by
+      p<sup>−e</sup>, and the evening itself can be better or worse than normal. The rule picks</p>
+    <div class="formula">the price p that maximises p × E[ min( s, p<sup>−e</sup> × ξ ) ]</div>
+    <p>where ξ is the ratio of actual to expected remaining sales, taken from the first 60 days. The cost of the stock
+      does not appear because it is already spent. At 19:00 the rule keeps full price up to about twice the normal
+      remaining sales, then deepens the discount:</p>
+    <div class="scroll"><table id="rule-table"><tr><th>Stock left, as a multiple of normal remaining sales</th><th class="n">Price at 17:00</th><th class="n">19:00</th><th class="n">21:00</th></tr></table></div>
+
+    <h2>Part 3: the replay</h2>
+    <p>For every held-out full-price, in-stock product-day I take the real hourly sales as demand, give the shop a
+      morning stock, and let sales run until the decision hour. Then the remaining stock is priced by one of three
+      policies, and evening demand is multiplied by p<sup>−e</sup>.</p>
+    <div class="scroll"><table id="bt-table">
+      <tr><th>Morning stock</th><th class="n">Waste, never discount</th><th class="n">Waste, flat 30%</th><th class="n">Waste, rule</th><th class="n">Revenue, flat 30%</th><th class="n">Revenue, rule</th></tr>
+    </table></div>
+    <p class="small">Decision at 19:00. Waste is the share of morning stock unsold at closing. Revenue is the change against never discounting.</p>
+
+    <h2>Limitations</h2>
+    <ul class="limits">
+      <li><b>Not an experiment.</b> The grocer decided when to discount. If it discounts products on days it expects to sell well, the lift is overstated; if it discounts to clear slow stock, understated.</li>
+      <li><b>Stock and expiry are assumed.</b> The data has neither. The replay’s waste levels depend on the morning stock I chose.</li>
+      <li><b>The replay uses the model’s own lift.</b> It shows the rule is a good decision if the lift is right. It does not re-test the lift.</li>
+      <li><b>One product at a time.</b> Discounting one item can take sales from similar items and from the next day.</li>
+      <li><b>One elasticity for everything.</b> Categories differ, from about 0.5 to 3.5. A shop would use its own.</li>
+      <li><b>A discount is assumed to work at once and equally in every hour.</b> Discounted days have nearly the same hourly shape, which supports this, but those were all-day discounts.</li>
+    </ul>
+
+    <h2>Reproduce it</h2>
+    <p><code>pip install -r requirements.txt</code>, then <code>python analysis/download.py</code>,
+      <code>python analysis/prepare.py</code> and <code>python analysis/analyze.py</code>. The seed is fixed.</p>
+  </article>
+</div>
+<script src="../../assets/fill.js"></script>
+<script src="data/results.js"></script>
+<script>
+const G = window.GROCERY; fillNumbers(G);
+const pct = (v, d = 1) => (v * 100).toFixed(d) + "%", sp = (v) => (v >= 0 ? "+" : "−") + Math.abs(v * 100).toFixed(1) + "%", n0 = (v) => v.toLocaleString("en-GB"), x2 = (v) => "×" + v.toFixed(2);
+const row = (cells) => "<tr>" + cells.map((c, i) => `<td${i ? ' class="n"' : ""}>${c}</td>`).join("") + "</tr>";
+const add = (id, rows) => document.getElementById(id).insertAdjacentHTML("beforeend", rows.join(""));
+const set = (id, v) => (document.getElementById(id).textContent = v);
+const band = (n) => G.lift.find((b) => b.band === n), bt = (q, h) => G.backtest.find((b) => b.stock === q && b.hour === h), m = bt(1.3, 19);
+set("l1", band("10-20% off").lift.toFixed(2)); set("l2", band("30-40% off").lift.toFixed(2));
+set("w0", pct(m.none.waste, 0)); set("w1", pct(m.flat.waste, 0)); set("w2", pct(m.rule.waste, 0)); set("r1", sp(m.flat.revenue_change)); set("r2", sp(m.rule.revenue_change));
+set("left19", pct(G.profile.remaining[19], 0));
+add("lift-table", G.lift.slice().reverse().map((b) => row([b.band, n0(b.days), x2(b.lift), `${b.lo.toFixed(2)} to ${b.hi.toFixed(2)}`, x2(b.test_lift), `${x2(b.no_promo)} (${n0(b.n_no_promo)})`, `${x2(b.promo)} (${n0(b.n_promo)})`])));
+add("cat-table", G.elasticity.by_category.map((c) => row([c.category, n0(c.products), c.elasticity.toFixed(2), `${c.lo.toFixed(2)} to ${c.hi.toFixed(2)}`])));
+add("val-table", Object.entries(G.validation).map(([k, v]) => row([k[0].toUpperCase() + k.slice(1), sp(v.bias), pct(v.wape, 0)])));
+const at = (h, s) => { const p = G.table[h].price[G.stock_grid.indexOf(s)]; return p === 1 ? "full price" : Math.round((1 - p) * 100) + "% off"; };
+add("rule-table", [1, 1.5, 2, 2.5, 3, 4, 5, 6].map((s) => row(["×" + s, at(17, s), at(19, s), at(21, s)])));
+add("bt-table", [1, 1.3, 1.6].map((q) => { const b = bt(q, 19); return row([q === 1 ? "A normal day’s sales" : `${Math.round((q - 1) * 100)}% more`, pct(b.none.waste), pct(b.flat.waste), pct(b.rule.waste), sp(b.flat.revenue_change), sp(b.rule.revenue_change)]); }));
+</script>
+</body>
+</html>

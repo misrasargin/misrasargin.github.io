@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Half-Life of Fame | Mısra Sargın</title>
+<meta name="description" content="How fast does attention fade? Daily Wikipedia page views for the most-read articles of 2025, the day each one peaked, and the 90 days after.">
+<link rel="stylesheet" href="../../assets/style.css">
+<style>
+  .board .side dl { display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 0.75rem; margin: 0 0 1rem; }
+  .board .side dt { color: #b9c2dc; } .board .side dd { margin: 0; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; color: #fff; }
+  .board { grid-template-columns: minmax(0, 1fr) 320px; } .board > * { min-width: 0; }
+  @media (max-width: 800px) { .board { grid-template-columns: minmax(0, 1fr); } }
+  .board .chart-pad { padding: 1rem 1rem 0.5rem; }
+  .board text { font: 400 13px var(--body); fill: #b9c2dc; }
+  .board .axis path, .board .axis line { stroke: #5b6894; }
+  .board input[type="search"] { width: 100%; font: inherit; padding: 0.45rem; border-radius: 4px; border: 1.5px solid #5b6894; background: #1b2748; color: #fff; margin: 0.5rem 0 0.4rem; }
+  .board select { margin-top: 0; }
+  .seg { display: inline-flex; border: 1.5px solid currentColor; border-radius: 4px; overflow: hidden; }
+  .seg button { font: inherit; padding: 0.3rem 0.8rem; background: transparent; color: inherit; border: 0; border-left: 1.5px solid currentColor; cursor: pointer; }
+  .seg button:first-child { border-left: 0; }
+  .board .seg button[aria-pressed="true"] { background: #e8ecf7; color: var(--board); }
+  .key { display: flex; flex-wrap: wrap; gap: 0.3rem 1.25rem; font-size: 0.9rem; margin: 0.25rem 0 0.5rem; }
+  .key i { display: inline-block; width: 1.4rem; height: 0; border-top: 3px solid; margin-right: 0.35rem; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a href="../../">Mısra Sargın</a>
+    <nav><a href="../../#projects">Projects</a><a href="report.html">Full report</a></nav>
+  </header>
+
+  <section class="hero" style="padding-bottom:0">
+    <h1>Half-life of fame</h1>
+    <p class="lede">A film comes out, a public figure dies, a final is played, and for a day everybody reads about it.
+      Then what? I took the most-read English Wikipedia articles of each month of <span data-k="meta.year" data-f="raw"></span>,
+      found the day each one peaked, and followed the <span data-k="meta.follow_days"></span> days after.
+      <span data-k="meta.events"></span> of them had a clear spike.</p>
+    <div class="answer">
+      <div><b><span id="t-half"></span> days</b>is the typical half-life: the time for the extra attention to drop to half of its peak.</div>
+      <div><b id="t-under"></b>of spikes lose half their extra readers within a single day.</div>
+      <div><b id="t-back"></b>days is the typical time until an article is back near its normal level. <span id="t-still"></span> are still above it after 90 days.</div>
+      <div><b id="t-sport"></b>days for a sports event to be back to normal, against <span id="t-tv"></span> for a TV series. What kind of thing it is matters most.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pick a spike</h2>
+    <p>Daily views from two weeks before the peak to two months after. The dashed line is the article’s normal level
+      before the event.</p>
+    <div class="board">
+      <div class="chart-pad">
+        <svg id="spike" role="img" aria-label="Daily page views around the peak of the chosen article"></svg>
+      </div>
+      <div class="side">
+        <label for="q"><h3>Find an article</h3></label>
+        <input type="search" id="q" placeholder="Type a name" autocomplete="off">
+        <select id="pick" size="7" aria-label="Articles"></select>
+        <p id="e-desc" style="margin-top:0.75rem"></p>
+        <dl>
+          <dt>Peak day</dt><dd id="e-date"></dd>
+          <dt>Views that day</dt><dd id="e-peak"></dd>
+          <dt>Times its normal level</dt><dd id="e-ratio"></dd>
+          <dt>Half-life</dt><dd id="e-half"></dd>
+          <dt>Back near normal</dt><dd id="e-back"></dd>
+        </dl>
+        <span class="seg" role="group" aria-label="Scale">
+          <button type="button" id="lin" aria-pressed="false">Plain scale</button><button type="button" id="log" aria-pressed="true">Log scale</button>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="sheet chart">
+      <h3>Who is forgotten fastest?</h3>
+      <p>Typical half-life by kind of article, with a 95% interval for the median.</p>
+      <svg id="types" role="img" aria-label="Median half-life by type of article with intervals"></svg>
+      <p class="small" id="kw-line"></p>
+    </div>
+    <div class="sheet chart">
+      <h3>The shape of forgetting</h3>
+      <p>Extra views as a share of the peak, for the typical article of each kind. The vertical scale is logarithmic.</p>
+      <div class="key" id="curve-key"></div>
+      <svg id="curves" role="img" aria-label="Typical fade after the peak by type of article"></svg>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>How it works, in plain words</h2>
+    <div class="cols" style="margin-top:1.25rem">
+      <div><h3>No hand-picking</h3><p>The articles are the 100 most-read of each month of 2025, as Wikipedia reports them. I did not choose the events.</p></div>
+      <div><h3>Each article is its own yardstick</h3><p>Its normal level is the median of the two months before the peak. Only views above that count as the spike.</p></div>
+      <div><h3>Two clocks</h3><p>Half-life measures the first drop. “Back near normal” measures the tail: the day views fall below twice the old level.</p></div>
+      <div><h3>Two shapes</h3><p>An exponential loses the same share every day. A power law drops fast and then lingers. I fitted both to each fade: the power law is closer in <span id="t-power"></span> of them, so neither describes them all.</p></div>
+    </div>
+    <h3 style="margin-top:2rem">What this cannot tell you</h3>
+    <ul class="limits">
+      <li>Page views measure curiosity, not fame or importance, and only on English Wikipedia.</li>
+      <li>Views are daily, so a half-life under one day is an estimate between two points.</li>
+      <li>The kinds of article come from one-line descriptions matched with simple patterns. Some are misfiled, and the “other” group is a mix.</li>
+      <li>Only articles that reached a monthly top 100 are included. Small spikes are missing.</li>
+      <li>A second event can hit during the 90 days: a sequel, an award, a trial. That lengthens the tail and I do not remove it.</li>
+    </ul>
+    <p style="margin-top:1.5rem"><a class="btn" href="report.html">Read the full report</a>
+      <a class="btn ghost" href="https://github.com/misrasargin/misrasargin.github.io/tree/main/projects/half-life-of-fame">See the code</a></p>
+  </section>
+
+  <footer>Data: Wikimedia Pageviews API and Wikidata descriptions (both CC0), October 2024 to March 2026. Charts drawn with D3.</footer>
+</div>
+<script src="../../assets/vendor/d3.min.js"></script>
+<script src="../../assets/fill.js"></script>
+<script src="data/results.js"></script>
+<script src="page.js"></script>
+</body>
+</html>
