@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report: What Do Data Jobs Ask For? | Mısra Sargın</title>
+<link rel="stylesheet" href="../../assets/style.css">
+<style>.report table { width: 100%; max-width: 760px; } .scroll { overflow-x: auto; } pre { background: var(--paper); border-left: 4px solid var(--teal); padding: 0.75rem 1rem; overflow-x: auto; font-size: 0.9rem; }</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a href="../../">Mısra Sargın</a>
+    <nav><a href="../../#projects">Projects</a><a href="./">Interactive page</a></nav>
+  </header>
+  <article class="sheet report" style="margin:2rem 0">
+    <h1 style="font-size:clamp(2rem,5vw,3.2rem)">What do data jobs ask for?</h1>
+    <p class="lede" style="margin-top:1rem">Method report for the <a href="./">interactive page</a>.</p>
+
+    <h2>Summary</h2>
+    <p>From <span data-k="meta.posts"></span> job posts in <span data-k="meta.months"></span> monthly Hacker News hiring
+      threads (<span data-k="meta.first_month" data-f="raw"></span> to <span data-k="meta.last_month" data-f="raw"></span>),
+      <span data-k="meta.data_posts"></span> mention a data role. Each role has a clear set of skills that travel with
+      it: SQL, dashboards and dbt for analysts; Airflow, Spark and warehouses for engineers; statistics and pandas for
+      scientists; PyTorch and fine-tuning for ML engineers. Over three years the largest change in the whole dataset
+      is the mention of AI agents, from <span data-k="headline.agents_first" data-f="pct"></span> to
+      <span data-k="headline.agents_last" data-f="pct"></span> of posts.</p>
+
+    <h2>Data</h2>
+    <p>“Ask HN: Who is hiring?” is a monthly thread where each top-level comment is one company’s job post. The threads
+      are public and available through the Hacker News search API. I kept the post text only, without author names,
+      and dropped comments under 200 characters, which are questions and replies. The repository stores counts, not text.</p>
+    <div class="scroll"><table id="role-table"><tr><th>Posts that mention</th><th class="n">Posts</th><th class="n">Share of all posts</th><th class="n">Also mention a junior opening</th></tr></table></div>
+    <p class="small">A post can mention several roles. Across all posts, <span data-k="meta.junior_share" data-f="pct"></span>
+      mention a junior, intern or new-graduate opening, <span data-k="meta.senior_share" data-f="pct"></span> mention a senior
+      title, and <span data-k="meta.remote_share" data-f="pct"></span> mention remote work.</p>
+
+    <h2>The pipeline</h2>
+    <p>Four scripts, each with one job:</p>
+    <ul class="limits">
+      <li><code>download.py</code> fetches the threads and caches them.</li>
+      <li><code>build_db.py</code> cleans the HTML and searches each post for 4 roles and <span data-k="meta.skills_tracked"></span>
+        skills with the patterns in <code>vocab.py</code>, then writes three tables to SQLite: posts, post_roles and post_skills.</li>
+      <li><code>queries.sql</code> holds every question asked of the database.</li>
+      <li><code>analyze.py</code> runs the queries and adds intervals and tests.</li>
+    </ul>
+    <p>For example, the count behind “which skills go with which role” is one join:</p>
+    <pre>SELECT r.role, s.skill, COUNT(*) AS posts
+FROM post_roles r JOIN post_skills s USING (post_id)
+GROUP BY r.role, s.skill;</pre>
+
+    <h2>Checking the patterns</h2>
+    <p>Keyword matching fails in two ways: it misses wordings and it catches the wrong ones. For the ambiguous
+      skills I read random matches and changed the patterns:</p>
+    <ul class="limits">
+      <li><b>R.</b> A bare “R” matched “R&amp;D”. The pattern now needs list context around it. Only
+        <span data-k="headline.r_posts"></span> posts are left, so R gets no chart.</li>
+      <li><b>Spark.</b> “Spark Capital” is an investor, not the engine. Excluded.</li>
+      <li><b>Statistics.</b> “Regression” alone mostly meant regression testing. The pattern now needs “linear regression”, “regression model” and similar.</li>
+      <li><b>Optimisation.</b> “Problem solvers” matched “solvers”. Removed.</li>
+      <li><b>Excel and spreadsheets.</b> Almost always described the customer’s pain (“still stuck in Excel”), not a job skill. Dropped as a skill.</li>
+      <li><b>AI agents.</b> Singular “agent” also means software agents, so only “agents”, “agentic” and “AI agent” style wordings count. Some sales and support “agents” still slip in.</li>
+    </ul>
+
+    <h2>Statistics</h2>
+    <p><b>Shares</b> come with 95% Wilson intervals, which behave well for small counts.</p>
+    <p><b>What is typical of a role.</b> For each role and skill I compare the skill’s share in posts that mention
+      the role with its share in all other posts (a test of two proportions). With four roles and dozens of skills
+      that is many tests, so p-values are corrected with Benjamini-Hochberg at a 5% false discovery rate. A skill is
+      called typical when it passes, appears in at least <span data-k="meta.min_distinct"></span> of the role’s posts,
+      and is at least twice as common with the role as without it.</p>
+    <div class="scroll"><table id="typical-table"><tr><th>Role</th><th>Typical skills, strongest first (times more common than elsewhere)</th></tr></table></div>
+    <p><b>What changed.</b> Each skill’s share in the first twelve months (<span data-k="meta.first_year_posts"></span> posts)
+      against the last twelve (<span data-k="meta.last_year_posts"></span> posts), with the same test and correction.</p>
+    <div class="scroll"><table id="trend-table"><tr><th>Skill</th><th class="n">First year</th><th class="n">Last year</th><th class="n">Change, points</th><th class="n">95% interval</th></tr></table></div>
+    <p class="small">Only changes that pass the correction are listed.</p>
+
+    <h2>Limitations</h2>
+    <ul class="limits">
+      <li>The source is one community. It leans to start-ups, software products and senior hires, and to the United States and remote work. It is not the data job market.</li>
+      <li>Posts list several jobs, and skills cannot be assigned to one of them. Ranking by how much more common a skill is with a role reduces this problem but does not remove it.</li>
+      <li>Mentions are not requirements, and a company describing its product (“we build AI agents”) counts like a skill it hires for.</li>
+      <li>The role and skill lists are mine. A skill I did not think of is invisible.</li>
+      <li>Roles with a few hundred posts give wide intervals for rare skills. The charts show them.</li>
+    </ul>
+
+    <h2>Reproduce it</h2>
+    <p><code>pip install -r requirements.txt</code>, then <code>python analysis/download.py</code>,
+      <code>python analysis/build_db.py</code> and <code>python analysis/analyze.py</code>.</p>
+  </article>
+</div>
+<script src="../../assets/fill.js"></script>
+<script src="data/results.js"></script>
+<script>
+const J = window.JOBS; fillNumbers(J);
+const pct = (v, d = 1) => (v * 100).toFixed(d) + "%", n0 = (v) => v.toLocaleString("en-GB");
+const row = (cells) => "<tr>" + cells.map((c, i) => `<td${i ? ' class="n"' : ""}>${c}</td>`).join("") + "</tr>";
+const add = (id, rows) => document.getElementById(id).insertAdjacentHTML("beforeend", rows.join(""));
+const roles = ["Data analyst", "Data scientist", "Data engineer", "ML / AI engineer", "Any data role"];
+add("role-table", roles.map((r) => row([r, n0(J.roles[r].posts), pct(J.roles[r].posts / J.meta.posts), J.roles[r].junior_share == null ? "" : pct(J.roles[r].junior_share)])));
+add("typical-table", roles.slice(0, 4).map((r) => `<tr><td>${r}</td><td>${J.roles[r].skills.filter((s) => s.distinct).sort((a, b) => b.ratio - a.ratio).map((s) => `${s.skill} (×${s.ratio.toFixed(1)})`).join(", ")}</td></tr>`));
+const pp = (v) => (v > 0 ? "+" : "−") + Math.abs(v * 100).toFixed(1);
+add("trend-table", J.trends.filter((t) => t.sig).map((t) => row([t.skill, pct(t.first), pct(t.last), pp(t.diff), `${pp(t.lo)} to ${pp(t.hi)}`])));
+</script>
+</body>
+</html>
